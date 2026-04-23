@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import pool from './db.js';
@@ -29,37 +29,44 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
     
-    // Validate email format
     if (!email || !email.includes('@')) {
       return res.status(400).json({ error: 'Valid email is required' });
     }
     
-    // Check if user exists
     const existing = await pool.query('SELECT id FROM users WHERE username = $1 OR email = $2', [username, email]);
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: 'Username or email already exists' });
     }
     
-    // Hash password
     const password_hash = await bcrypt.hash(password, 10);
     
-    // Create user
     const result = await pool.query(
       'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email',
       [username, email, password_hash]
     );
     
-    // Create empty profile for user
-    await pool.query('INSERT INTO profiles (user_id) VALUES ($1)', [result.rows[0].id]);
+    const userId = result.rows[0].id;
     
-    // Generate token
-    const token = jwt.sign({ userId: result.rows[0].id }, JWT_SECRET);
+    await pool.query('INSERT INTO profiles (user_id) VALUES ($1)', [userId]);
     
-    // Send welcome email (don't await - don't block response)
+    const token = jwt.sign({ userId }, JWT_SECRET);
+    
     const welcomeData = { username };
     sendEmail(email, 'welcome', welcomeData)
-      .then(() => console.log(`Welcome email sent to ${email}`))
-      .catch(err => console.error('Welcome email failed:', err.message));
+      .then(async (emailResult) => {
+        console.log(`Welcome email sent to ${email}`);
+        await pool.query(
+          'INSERT INTO email_logs (user_id, recipient_email, email_type, status, sent_at) VALUES ($1, $2, $3, $4, NOW())',
+          [userId, email, 'welcome', emailResult ? 'sent' : 'failed']
+        );
+      })
+      .catch(async (err) => {
+        console.error('Welcome email failed:', err.message);
+        await pool.query(
+          'INSERT INTO email_logs (user_id, recipient_email, email_type, status, error_message, sent_at) VALUES ($1, $2, $3, $4, $5, NOW())',
+          [userId, email, 'welcome', 'failed', err.message]
+        );
+      });
     
     res.json({ user: result.rows[0], token });
   } catch (error) {
@@ -86,13 +93,24 @@ app.post('/api/auth/login', async (req, res) => {
     
     const token = jwt.sign({ userId: user.id }, JWT_SECRET);
     
-    // Send login alert email
     const timestamp = new Date().toLocaleString();
     const ip = getClientIp(req);
     const loginData = { username, timestamp, ip };
     sendEmail(user.email, 'loginAlert', loginData)
-      .then(() => console.log(`Login alert email sent to ${user.email}`))
-      .catch(err => console.error('Login alert email failed:', err.message));
+      .then(async (emailResult) => {
+        console.log(`Login alert email sent to ${user.email}`);
+        await pool.query(
+          'INSERT INTO email_logs (user_id, recipient_email, email_type, status, sent_at) VALUES ($1, $2, $3, $4, NOW())',
+          [user.id, user.email, 'loginAlert', emailResult ? 'sent' : 'failed']
+        );
+      })
+      .catch(async (err) => {
+        console.error('Login alert email failed:', err.message);
+        await pool.query(
+          'INSERT INTO email_logs (user_id, recipient_email, email_type, status, error_message, sent_at) VALUES ($1, $2, $3, $4, $5, NOW())',
+          [user.id, user.email, 'loginAlert', 'failed', err.message]
+        );
+      });
     
     res.json({ user: { id: user.id, username: user.username, email: user.email }, token });
   } catch (error) {
@@ -121,6 +139,66 @@ app.get('/api/auth/me', authenticate, async (req, res) => {
   try {
     const result = await pool.query('SELECT id, username, email, created_at FROM users WHERE id = $1', [req.userId]);
     res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ ADMIN MIDDLEWARE ============
+
+async function isAdmin(req, res, next) {
+  try {
+    const result = await pool.query('SELECT * FROM admin_users WHERE user_id = $1', [req.userId]);
+    if (result.rows.length === 0) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+// ============ ADMIN EMAIL ROUTES ============
+
+app.get('/api/admin/emails', authenticate, isAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT el.*, u.username 
+      FROM email_logs el
+      JOIN users u ON el.user_id = u.id
+      ORDER BY el.sent_at DESC
+      LIMIT 100
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/admin/emails', authenticate, isAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM email_logs');
+    res.json({ success: true, message: 'All email logs deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/admin/emails/old', authenticate, isAdmin, async (req, res) => {
+  const { days = 30 } = req.query;
+  try {
+    await pool.query('DELETE FROM email_logs WHERE sent_at < NOW() - INTERVAL \'1 day\' * $1', [days]);
+    res.json({ success: true, message: `Deleted email logs older than ${days} days` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/admin/test-email', authenticate, isAdmin, async (req, res) => {
+  const { email } = req.body;
+  try {
+    const result = await sendEmail(email, 'welcome', { username: 'Admin Test' });
+    res.json({ success: true, result });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
