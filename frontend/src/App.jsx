@@ -27,77 +27,102 @@ function LoginPage({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-800">
-      <div className="bg-slate-800 rounded-2xl shadow-xl p-8 w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+      <div className="w-full max-w-md">
+        {/* Logo Section */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white">ResumeApp</h1>
-          <p className="text-slate-400 mt-2">Build your professional resume</p>
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-lg mb-4">
+            <i className="fas fa-file-alt text-white text-3xl"></i>
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-2">ResumeApp</h1>
+          <p className="text-blue-200">Build your professional resume in minutes</p>
         </div>
 
-        <div className="flex gap-4 mb-6">
-          <button
-            onClick={() => setIsLogin(true)}
-            className={`flex-1 py-2 rounded-lg transition ${isLogin ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}
-          >
-            Login
-          </button>
-          <button
-            onClick={() => setIsLogin(false)}
-            className={`flex-1 py-2 rounded-lg transition ${!isLogin ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}
-          >
-            Sign Up
-          </button>
-        </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded-lg text-red-200 text-sm">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-slate-300 text-sm mb-2">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-blue-500 outline-none"
-              required
-            />
+        {/* Form Card */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
+          {/* Tabs */}
+          <div className="flex gap-4 mb-6">
+            <button
+              onClick={() => setIsLogin(true)}
+              className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
+                isLogin 
+                  ? 'bg-blue-500 text-white shadow-lg' 
+                  : 'bg-white/10 text-white/70 hover:bg-white/20'
+              }`}
+            >
+              Login
+            </button>
+            <button
+              onClick={() => setIsLogin(false)}
+              className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
+                !isLogin 
+                  ? 'bg-blue-500 text-white shadow-lg' 
+                  : 'bg-white/10 text-white/70 hover:bg-white/20'
+              }`}
+            >
+              Sign Up
+            </button>
           </div>
 
-          {!isLogin && (
-            <div>
-              <label className="block text-slate-300 text-sm mb-2">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-blue-500 outline-none"
-                required
-              />
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-200 text-sm">
+              {error}
             </div>
           )}
 
-          <div>
-            <label className="block text-slate-300 text-sm mb-2">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-blue-500 outline-none"
-              required
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-blue-500 focus:outline-none transition"
+                required
+              />
+            </div>
 
-          <button
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition"
-          >
-            {isLogin ? 'Login' : 'Create Account'}
-          </button>
-        </form>
+            {!isLogin && (
+              <div>
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-blue-500 focus:outline-none transition"
+                  required
+                />
+              </div>
+            )}
+
+            <div>
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-blue-500 focus:outline-none transition"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-semibold transition transform hover:scale-[1.02]"
+            >
+              {isLogin ? 'Login' : 'Create Account'}
+            </button>
+          </form>
+
+          {/* Features */}
+          <div className="mt-6 pt-4 border-t border-white/20 text-center">
+            <div className="flex justify-center gap-6 text-sm text-white/60">
+              <span>✨ Easy to use</span>
+              <span>🖨️ Printable</span>
+              <span>📤 Shareable links</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
