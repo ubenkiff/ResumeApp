@@ -5,9 +5,27 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import pool from './db.js';
 import { sendEmail } from './email.js';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import multer from 'multer';
 
 dotenv.config();
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
+// Configure multer for Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'resumeapp',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'webp']
+  }
+});
+const upload = multer({ storage: storage });
 const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'secret-key';
@@ -517,6 +535,20 @@ app.get('/api/public/:username', async (req, res) => {
     });
   } catch (error) {
     console.error('Public view error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ IMAGE UPLOAD ROUTE ============
+
+app.post('/api/upload', authenticate, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image uploaded' });
+    }
+    res.json({ url: req.file.path });
+  } catch (error) {
+    console.error('Upload error:', error);
     res.status(500).json({ error: error.message });
   }
 });
