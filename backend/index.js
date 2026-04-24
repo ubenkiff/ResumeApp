@@ -41,8 +41,8 @@ app.post('/api/auth/register', async (req, res) => {
     const password_hash = await bcrypt.hash(password, 10);
     
     const result = await pool.query(
-      'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email',
-      [username, email, password_hash]
+        'INSERT INTO users (username, email, password_hash, subscription_status) VALUES ($1, $2, $3, $4) RETURNING id, username, email',
+  [username, email, password_hash, 'free']
     );
     
     const userId = result.rows[0].id;
@@ -137,7 +137,7 @@ function authenticate(req, res, next) {
 // Get current user
 app.get('/api/auth/me', authenticate, async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, username, email, created_at FROM users WHERE id = $1', [req.userId]);
+    const result = await pool.query('SELECT id, username, email, created_at, subscription_status FROM users WHERE id = $1', [req.userId]);
     res.json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
