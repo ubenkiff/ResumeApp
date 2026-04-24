@@ -15,6 +15,14 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret-key';
 app.use(cors());
 app.use(express.json());
 
+// List of admin emails (hardcoded)
+const adminEmails = [
+  'ubenkiff@gmail.com',
+  'uddi.cpos@gmail.com',
+  'benkiffdocs@gmail.com',
+  'uddi.mikendad@gmail.com'
+];
+
 // Helper function to get client IP
 const getClientIp = (req) => {
   return req.headers['x-forwarded-for'] || 
@@ -41,8 +49,8 @@ app.post('/api/auth/register', async (req, res) => {
     const password_hash = await bcrypt.hash(password, 10);
     
     const result = await pool.query(
-        'INSERT INTO users (username, email, password_hash, subscription_status) VALUES ($1, $2, $3, $4) RETURNING id, username, email',
-  [username, email, password_hash, 'free']
+      'INSERT INTO users (username, email, password_hash, subscription_status) VALUES ($1, $2, $3, $4) RETURNING id, username, email',
+      [username, email, password_hash, 'free']
     );
     
     const userId = result.rows[0].id;
@@ -148,8 +156,10 @@ app.get('/api/auth/me', authenticate, async (req, res) => {
 
 async function isAdmin(req, res, next) {
   try {
-    const result = await pool.query('SELECT * FROM admin_users WHERE user_id = $1', [req.userId]);
-    if (result.rows.length === 0) {
+    const result = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
+    const userEmail = result.rows[0]?.email;
+    
+    if (!userEmail || !adminEmails.includes(userEmail)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     next();
@@ -521,30 +531,4 @@ app.get('/api/healthz', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 ResumeApp server running on port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
-});
-
-// Forgot Password - Request reset
-app.post('/api/auth/forgot-password', async (req, res) => {
-  try {
-    const { email } = req.body;
-    const user = await pool.query('SELECT id, username FROM users WHERE email = $1', [email]);
-    
-    if (user.rows.length === 0) {
-      return res.status(404).json({ error: 'Email not found' });
-    }
-    
-    // Generate reset token (expires in 1 hour)
-    const resetToken = jwt.sign({ userId: user.rows[0].id }, JWT_SECRET, { expiresIn: '1h' });
-    
-    // Store token in database (add reset_token column to users)
-    await pool.query('UPDATE users SET reset_token = $1, reset_token_expires = NOW() + INTERVAL \'1 hour\' WHERE id = $2', [resetToken, user.rows[0].id]);
-    
-    // Send reset email
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
-    await sendEmail(email, 'passwordReset', { username: user.rows[0].username, resetLink });
-    
-    res.json({ message: 'Password reset link sent to your email' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
 });
