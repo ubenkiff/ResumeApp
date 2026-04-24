@@ -121,21 +121,6 @@ function LoginPage({ onLogin }) {
             </button>
           </div>
 
-          {/* Stats / Social Proof */}
-          <div className="mt-16 flex justify-center gap-8 text-center">
-            <div>
-              <p className="text-2xl font-bold text-gray-900">1,000+</p>
-              <p className="text-gray-500 text-sm">Resumes Created</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">98%</p>
-              <p className="text-gray-500 text-sm">Satisfaction Rate</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">24/7</p>
-              <p className="text-gray-500 text-sm">Access</p>
-            </div>
-          </div>
         </div>
 
         {/* Features Grid */}
