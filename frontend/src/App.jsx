@@ -11,6 +11,7 @@ function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showDemo, setShowDemo] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
@@ -114,42 +115,44 @@ function LoginPage({ onLogin }) {
               Start Building Free
             </button>
             <button
-              onClick={() => { setIsLogin(true); setShowAuthModal(true); }}
+              onClick={() => setShowDemo(true)}
               className="px-8 py-3 bg-white text-gray-700 font-semibold rounded-lg border border-gray-300 hover:bg-gray-50 transition"
             >
-              View Demo
+              <i className="fas fa-play mr-2"></i> View Demo
             </button>
           </div>
 
-        </div>
-
-        {/* Features Grid */}
-        <div className="mt-24 grid md:grid-cols-3 gap-8">
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
-              <i className="fas fa-magic text-blue-600 text-xl"></i>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Easy to Use</h3>
-            <p className="text-gray-500">Intuitive interface to build your resume in minutes</p>
-          </div>
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition">
-            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
-              <i className="fas fa-print text-green-600 text-xl"></i>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Printable & PDF</h3>
-            <p className="text-gray-500">Download as PDF or print directly</p>
-          </div>
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition">
-            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
-              <i className="fas fa-share-alt text-purple-600 text-xl"></i>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Shareable Links</h3>
-            <p className="text-gray-500">Get a unique URL to share with employers</p>
-          </div>
+          {/* Spacer */}
+          <div className="mt-16"></div>
         </div>
       </main>
 
-      {/* Auth Modal - Popup */}
+      {/* Demo Video Modal */}
+      {showDemo && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50" onClick={() => setShowDemo(false)}>
+          <div className="bg-white rounded-2xl max-w-4xl w-full p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-900">ResumeApp Demo</h3>
+              <button onClick={() => setShowDemo(false)} className="text-gray-400 hover:text-gray-600">
+                <i className="fas fa-times text-2xl"></i>
+              </button>
+            </div>
+            <iframe
+              src="https://player.cloudinary.com/embed/?cloud_name=dir1ub2qu&public_id=Video_preview_of_my_resume_app_hfbqwj"
+              width="640"
+              height="360"
+              style={{ height: 'auto', width: '100%', aspectRatio: '640 / 360' }}
+              allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+              allowFullScreen
+              frameBorder="0"
+              title="ResumeApp Demo"
+            ></iframe>
+            <p className="text-center text-gray-500 text-sm mt-3">Watch how ResumeApp helps you build professional resumes</p>
+          </div>
+        </div>
+      )}
+
+      {/* Auth Modal */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowAuthModal(false)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8" onClick={(e) => e.stopPropagation()}>
