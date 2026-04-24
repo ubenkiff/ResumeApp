@@ -522,3 +522,29 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 ResumeApp server running on port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
 });
+
+// Forgot Password - Request reset
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await pool.query('SELECT id, username FROM users WHERE email = $1', [email]);
+    
+    if (user.rows.length === 0) {
+      return res.status(404).json({ error: 'Email not found' });
+    }
+    
+    // Generate reset token (expires in 1 hour)
+    const resetToken = jwt.sign({ userId: user.rows[0].id }, JWT_SECRET, { expiresIn: '1h' });
+    
+    // Store token in database (add reset_token column to users)
+    await pool.query('UPDATE users SET reset_token = $1, reset_token_expires = NOW() + INTERVAL \'1 hour\' WHERE id = $2', [resetToken, user.rows[0].id]);
+    
+    // Send reset email
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    await sendEmail(email, 'passwordReset', { username: user.rows[0].username, resetLink });
+    
+    res.json({ message: 'Password reset link sent to your email' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
