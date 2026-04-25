@@ -4,6 +4,7 @@ import api from './api';
 import Dashboard from './Dashboard';
 import PublicView from './PublicView';
 import PrintableResume from './PrintableResume';
+import ResetPassword from './ResetPassword';
 
 function LoginPage({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -227,6 +228,7 @@ function App() {
         <Route path="/" element={<Dashboard user={user} onLogout={logout} />} />
         <Route path="/view/:username" element={<PublicView />} />
         <Route path="/resume/:username" element={<PrintableResume />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
