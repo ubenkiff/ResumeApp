@@ -16,10 +16,21 @@ function Dashboard({ user, onLogout }) {
   const [projects, setProjects] = useState([]);
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [subscriptionStatus, setSubscriptionStatus] = useState('free');
 
   useEffect(() => {
     fetchAllData();
+    fetchSubscriptionStatus();
   }, []);
+
+  const fetchSubscriptionStatus = async () => {
+    try {
+      const res = await api.get('/auth/me');
+      setSubscriptionStatus(res.data.subscription_status || 'free');
+    } catch (err) {
+      console.error('Error fetching subscription status:', err);
+    }
+  };
 
   const fetchAllData = async () => {
     try {
@@ -80,6 +91,24 @@ function Dashboard({ user, onLogout }) {
               <p className="text-gray-500">Welcome back, {user?.username}!</p>
             </div>
 
+            {/* Subscription Banner */}
+            {subscriptionStatus !== 'premium' && (
+              <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white p-4 rounded-lg mb-6">
+                <div className="flex justify-between items-center flex-wrap gap-4">
+                  <div>
+                    <p className="font-semibold">🔓 Upgrade to Premium</p>
+                    <p className="text-sm opacity-90">Share your resume, print PDF, and more!</p>
+                  </div>
+                  <button 
+                    onClick={() => alert('Upgrade now - Only $9.99/month! Contact admin for payment.')}
+                    className="bg-white text-orange-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition"
+                  >
+                    Upgrade Now
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Stats Cards */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
@@ -96,51 +125,72 @@ function Dashboard({ user, onLogout }) {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <i className="fas fa-chart-line text-green-600 text-xl"></i>
+                    <i className="fas fa-briefcase text-green-600 text-xl"></i>
                   </div>
                   <span className="text-2xl font-bold text-gray-800">{experience.length}</span>
                 </div>
                 <h3 className="text-gray-900 font-semibold">Work Experience</h3>
-                <p className="text-gray-500 text-sm mt-1">Add your professional journey</p>
+                <p className="text-gray-500 text-sm mt-1">Track your professional journey</p>
               </div>
 
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <i className="fas fa-share-alt text-purple-600 text-xl"></i>
+                    <i className="fas fa-code text-purple-600 text-xl"></i>
                   </div>
-                  <span className="text-2xl font-bold text-gray-800">1</span>
+                  <span className="text-2xl font-bold text-gray-800">{skills.length}</span>
                 </div>
-                <h3 className="text-gray-900 font-semibold">Share Your Resume</h3>
-                <p className="text-gray-500 text-sm break-all mt-1">
-                  /u/{user?.username}
-                </p>
+                <h3 className="text-gray-900 font-semibold">Skills</h3>
+                <p className="text-gray-500 text-sm mt-1">Showcase your expertise</p>
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Action Buttons with Paywall */}
             <div className="flex flex-wrap gap-4 mb-8">
+              {/* View Portfolio - Always free */}
               <button
                 onClick={() => window.open(`/view/${user?.username}`, '_blank')}
                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition shadow-sm"
               >
                 <i className="fas fa-eye"></i> View Public Portfolio
               </button>
-              <button
-                onClick={() => window.open(`/resume/${user?.username}`, '_blank')}
-                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2 transition shadow-sm"
-              >
-                <i className="fas fa-print"></i> View Printable Resume
-              </button>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(`/u/${user?.username}`);
-                  alert('Link copied to clipboard!');
-                }}
-                className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center gap-2 transition shadow-sm"
-              >
-                <i className="fas fa-copy"></i> Copy Shareable Link
-              </button>
+              
+              {/* Share Link - Premium only */}
+              {subscriptionStatus === 'premium' ? (
+                <button
+                  onClick={() => { 
+                    navigator.clipboard.writeText(`https://resumeapp.vercel.app/view/${user?.username}`); 
+                    alert('Link copied to clipboard!'); 
+                  }}
+                  className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center gap-2 transition shadow-sm"
+                >
+                  <i className="fas fa-share-alt"></i> Copy Shareable Link
+                </button>
+              ) : (
+                <button
+                  onClick={() => alert('🔓 Upgrade to Premium to share your resume! Only $9.99/month. Contact admin to upgrade.')}
+                  className="px-6 py-3 bg-gray-400 hover:bg-gray-500 text-white rounded-lg flex items-center gap-2 transition shadow-sm cursor-pointer"
+                >
+                  <i className="fas fa-lock"></i> Share Link (Upgrade)
+                </button>
+              )}
+              
+              {/* Print/Download - Premium only */}
+              {subscriptionStatus === 'premium' ? (
+                <button
+                  onClick={() => window.open(`/resume/${user?.username}`, '_blank')}
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2 transition shadow-sm"
+                >
+                  <i className="fas fa-print"></i> Print / Download PDF
+                </button>
+              ) : (
+                <button
+                  onClick={() => alert('🔓 Upgrade to Premium to print and download your resume! Only $9.99/month. Contact admin to upgrade.')}
+                  className="px-6 py-3 bg-gray-400 hover:bg-gray-500 text-white rounded-lg flex items-center gap-2 transition shadow-sm cursor-pointer"
+                >
+                  <i className="fas fa-lock"></i> Print (Upgrade)
+                </button>
+              )}
             </div>
 
             {/* Quick Tips */}
@@ -150,10 +200,10 @@ function Dashboard({ user, onLogout }) {
               </h3>
               <ul className="text-gray-600 text-sm space-y-1">
                 <li>• Add your profile information to get started</li>
-                <li>• Upload a professional profile photo</li>
+                <li>• Upload a professional profile photo (Max 5MB)</li>
                 <li>• Add your work experience with key highlights</li>
                 <li>• List your skills and projects to showcase your expertise</li>
-                <li>• Share your public link with employers</li>
+                {subscriptionStatus !== 'premium' && <li>• <span className="text-orange-600 font-semibold">Upgrade to Premium</span> to share your resume and print PDF</li>}
               </ul>
             </div>
           </div>
@@ -177,7 +227,7 @@ function Dashboard({ user, onLogout }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar - Dark */}
+      {/* Sidebar */}
       <div className="w-64 bg-gray-900 shadow-lg">
         <div className="p-6 border-b border-gray-800">
           <h1 className="text-xl font-bold text-white">ResumeApp</h1>
@@ -208,7 +258,7 @@ function Dashboard({ user, onLogout }) {
         </div>
       </div>
 
-      {/* Main Content - White Background */}
+      {/* Main Content */}
       <div className="flex-1 p-8 overflow-auto bg-gray-50">
         {renderContent()}
       </div>
