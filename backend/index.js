@@ -10,6 +10,22 @@ import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
 
 dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+const JWT_SECRET = process.env.JWT_SECRET || 'secret-key';
+
+app.use(cors());
+app.use(express.json());
+
+// List of admin emails (hardcoded)
+const adminEmails = [
+  'ubenkiff@gmail.com',
+  'uddi.cpos@gmail.com',
+  'benkiffdocs@gmail.com',
+  'uddi.mikendad@gmail.com'
+];
+
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -26,20 +42,6 @@ const storage = new CloudinaryStorage({
   }
 });
 const upload = multer({ storage: storage });
-const app = express();
-const PORT = process.env.PORT || 3001;
-const JWT_SECRET = process.env.JWT_SECRET || 'secret-key';
-
-app.use(cors());
-app.use(express.json());
-
-// List of admin emails (hardcoded)
-const adminEmails = [
-  'ubenkiff@gmail.com',
-  'uddi.cpos@gmail.com',
-  'benkiffdocs@gmail.com',
-  'uddi.mikendad@gmail.com'
-];
 
 // Helper function to get client IP
 const getClientIp = (req) => {
@@ -170,6 +172,76 @@ app.get('/api/auth/me', authenticate, async (req, res) => {
   }
 });
 
+// ============ FORGOT PASSWORD ROUTES ============
+
+// Forgot Password - Request reset
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    // Find user by email (case insensitive)
+    const result = await pool.query('SELECT id, username FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Email not found' });
+    }
+    
+    const user = result.rows[0];
+    
+    // Generate reset token (expires in 1 hour)
+    const resetToken = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
+    
+    // Update user with reset token
+    await pool.query(
+      'UPDATE users SET reset_token = $1, reset_token_expires = NOW() + INTERVAL \'1 hour\' WHERE id = $2',
+      [resetToken, user.id]
+    );
+    
+    const resetLink = `${process.env.FRONTEND_URL || 'https://resumeapp.vercel.app'}/reset-password?token=${resetToken}`;
+    
+    // Send email
+    await sendEmail(email, 'passwordReset', { username: user.username, resetLink });
+    
+    res.json({ message: 'Password reset link sent to your email' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Reset Password - Update password
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    
+    // Verify token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // Find user with valid reset token
+    const user = await pool.query(
+      'SELECT id FROM users WHERE id = $1 AND reset_token = $2 AND reset_token_expires > NOW()',
+      [decoded.userId, token]
+    );
+    
+    if (user.rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+    
+    // Hash new password
+    const password_hash = await bcrypt.hash(password, 10);
+    
+    // Update password and clear reset token
+    await pool.query(
+      'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2',
+      [password_hash, user.rows[0].id]
+    );
+    
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(400).json({ error: 'Invalid or expired reset token' });
+  }
+});
+
 // ============ ADMIN MIDDLEWARE ============
 
 async function isAdmin(req, res, next) {
@@ -228,6 +300,20 @@ app.post('/api/admin/test-email', authenticate, isAdmin, async (req, res) => {
     const result = await sendEmail(email, 'welcome', { username: 'Admin Test' });
     res.json({ success: true, result });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ IMAGE UPLOAD ROUTE ============
+
+app.post('/api/upload', authenticate, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image uploaded' });
+    }
+    res.json({ url: req.file.path });
+  } catch (error) {
+    console.error('Upload error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -538,47 +624,6 @@ app.get('/api/public/:username', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-// ============ IMAGE UPLOAD ROUTE ============
-
-app.post('/api/upload', authenticate, upload.single('image'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No image uploaded' });
-    }
-    res.json({ url: req.file.path });
-  } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});// ============ FORGOT PASSWORD ROUTE ============
-
-app.post('/api/auth/forgot-password', async (req, res) => {
-  try {
-    const { email } = req.body;
-    
-    const result = await pool.query('SELECT id, username FROM users WHERE email = $1', [email]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Email not found' });
-    }
-    
-    const user = result.rows[0];
-    const resetToken = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
-    
-    // Store reset token in database (add column first)
-    await pool.query('UPDATE users SET reset_token = $1, reset_token_expires = NOW() + INTERVAL \'1 hour\' WHERE id = $2', [resetToken, user.id]);
-    
-    const resetLink = `${process.env.FRONTEND_URL || 'https://resumeapp.vercel.app'}/reset-password?token=${resetToken}`;
-    
-    await sendEmail(email, 'passwordReset', { username: user.username, resetLink });
-    
-    res.json({ message: 'Password reset link sent to your email' });
-  } catch (error) {
-    console.error('Forgot password error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 
 // ============ HEALTH CHECK ============
 
