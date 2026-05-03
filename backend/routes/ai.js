@@ -172,9 +172,19 @@ router.post('/search-jobs', async (req, res) => {
       return res.status(400).json({ error: 'Keyword is required' });
     }
 
-    const prompt = `Generate 5 realistic job listings for ${keyword} ${location ? `in ${location}` : ''}.
+    const prompt = `Generate 5 realistic job listings for "${keyword}"${location ? ` in ${location}` : ' worldwide'}.
 
-Return ONLY valid JSON array with objects containing: title, company, location, description, postedDate.`;
+Return ONLY a valid JSON array. Each object must have these fields:
+- title (string)
+- company (string)
+- location (string)
+- salary (string, in the local currency of the job location, e.g. "$80,000", "£45,000", "AED 15,000/month", "R 35,000/month")
+- description (string, 2-3 sentences about the role)
+- postedDate (string, e.g. "2 days ago", "Today", "1 week ago")
+- url (string, realistic job board URL)
+- isInfrastructureRelated (boolean)
+
+No region restrictions. Include jobs from any country matching the search.`;
 
     const completion = await groq.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
