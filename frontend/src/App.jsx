@@ -5,6 +5,8 @@ import Dashboard from './Dashboard';
 import PublicView from './PublicView';
 import PrintableResume from './PrintableResume';
 import ResetPassword from './ResetPassword';
+import ATSScore from './ATSScore';
+import AIAssistant from './pages/AIAssistant';
 
 function LoginPage({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -229,6 +231,8 @@ function App() {
         <Route path="/view/:username" element={<PublicView />} />
         <Route path="/resume/:username" element={<PrintableResume />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/ats-resume/:username" element={<ATSScore />} />
+        <Route path="/ai-assistant" element={<AIAssistant />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>

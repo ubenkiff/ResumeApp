@@ -8,6 +8,9 @@ import { sendEmail } from './email.js';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
+import referencesRouter from './routes/references.js';
+import aiRouter from './routes/ai.js';
+import coverDataRouter from './routes/user-cover-data.js';
 
 dotenv.config();
 
@@ -630,6 +633,15 @@ app.get('/api/public/:username', async (req, res) => {
 app.get('/api/healthz', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// ============ REFERENCES ROUTES ============
+app.use('/api/user/references', referencesRouter);
+
+// ============ AI ROUTES ============
+app.use('/api/ai', aiRouter);
+
+// ============ COVER DATA ROUTES ============
+app.use('/api/user/cover-data', coverDataRouter);
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {

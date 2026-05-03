@@ -6,6 +6,9 @@ import EducationManager from './EducationManager';
 import SkillsManager from './SkillsManager';
 import ProjectsManager from './ProjectsManager';
 import AchievementsManager from './AchievementsManager';
+import WhatsAppButton from './components/WhatsAppButton';
+import AIAssistant from './pages/AIAssistant';
+import ReferencesManager from './components/ReferencesManager';
 
 function Dashboard({ user, onLogout }) {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -66,7 +69,9 @@ function Dashboard({ user, onLogout }) {
     { id: 'education', name: 'Education', icon: 'fas fa-graduation-cap' },
     { id: 'skills', name: 'Skills', icon: 'fas fa-code' },
     { id: 'projects', name: 'Projects', icon: 'fas fa-folder-open' },
-    { id: 'achievements', name: 'Achievements', icon: 'fas fa-trophy' }
+    { id: 'achievements', name: 'Achievements', icon: 'fas fa-trophy' },
+    { id: 'ai-assistant', name: 'AI Assistant', icon: 'fas fa-robot' },
+    { id: 'references', name: 'References', icon: 'fas fa-users' }
   ];
 
   const renderContent = () => {
@@ -155,6 +160,14 @@ function Dashboard({ user, onLogout }) {
                 <i className="fas fa-eye"></i> View Public Portfolio
               </button>
               
+              {/* ATS Resume - Always free (NEW) */}
+              <button
+                onClick={() => window.open(`/ats-resume/${user?.username}`, '_blank')}
+                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center gap-2 transition shadow-sm"
+              >
+                <i className="fas fa-chart-line"></i> View ATS Resume
+              </button>
+              
               {/* Share Link - Premium only */}
               {subscriptionStatus === 'premium' ? (
                 <button
@@ -203,6 +216,7 @@ function Dashboard({ user, onLogout }) {
                 <li>• Upload a professional profile photo (Max 5MB)</li>
                 <li>• Add your work experience with key highlights</li>
                 <li>• List your skills and projects to showcase your expertise</li>
+                <li>• Use the ATS Resume to check how recruiters see your resume</li>
                 {subscriptionStatus !== 'premium' && <li>• <span className="text-orange-600 font-semibold">Upgrade to Premium</span> to share your resume and print PDF</li>}
               </ul>
             </div>
@@ -220,6 +234,10 @@ function Dashboard({ user, onLogout }) {
         return <ProjectsManager projects={projects} onRefresh={refreshData} />;
       case 'achievements':
         return <AchievementsManager achievements={achievements} onRefresh={refreshData} />;
+      case 'ai-assistant':
+        return <AIAssistant />;
+      case 'references':
+        return <ReferencesManager />;
       default:
         return null;
     }
@@ -262,6 +280,9 @@ function Dashboard({ user, onLogout }) {
       <div className="flex-1 p-8 overflow-auto bg-gray-50">
         {renderContent()}
       </div>
+
+      {/* WhatsApp Floating Button */}
+      <WhatsAppButton />
     </div>
   );
 }

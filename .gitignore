@@ -1,2 +1,7 @@
 .vercel
 .env*.local
+.env
+backend/.env
+frontend/.env
+frontend/.env.development
+node_modules/
