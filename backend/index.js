@@ -29,6 +29,30 @@ const adminEmails = [
   'uddi.mikendad@gmail.com'
 ];
 
+// Helper function to parse various date formats for sorting
+function parseDate(dateStr) {
+  if (!dateStr) return new Date(0);
+  
+  const months = ['january', 'february', 'march', 'april', 'may', 'june', 
+                  'july', 'august', 'september', 'october', 'november', 'december'];
+  const lower = dateStr.toLowerCase();
+  
+  // Handle "April 2026" format
+  for (let i = 0; i < months.length; i++) {
+    if (lower.includes(months[i])) {
+      const year = parseInt(dateStr.match(/\d{4}/)?.[0] || '2000');
+      return new Date(year, i, 1);
+    }
+  }
+  
+  // Handle "2025" format
+  if (dateStr.match(/^\d{4}$/)) {
+    return new Date(parseInt(dateStr), 0, 1);
+  }
+  
+  return new Date(dateStr);
+}
+
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -351,8 +375,14 @@ app.put('/api/profile', authenticate, async (req, res) => {
 
 app.get('/api/experience', authenticate, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM experience WHERE user_id = $1 ORDER BY start_date DESC', [req.userId]);
-    res.json(result.rows);
+    const result = await pool.query('SELECT * FROM experience WHERE user_id = $1', [req.userId]);
+    // Sort by parsed date (most recent first)
+    const sorted = result.rows.sort((a, b) => {
+      const dateA = parseDate(a.start_date);
+      const dateB = parseDate(b.start_date);
+      return dateB - dateA;
+    });
+    res.json(sorted);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -594,7 +624,7 @@ app.delete('/api/achievements/:id', authenticate, async (req, res) => {
   }
 });
 
-// ============ PUBLIC VIEW ROUTE ============
+// ============ PUBLIC VIEW ROUTE (with date sorting fix) ============
 
 app.get('/api/public/:username', async (req, res) => {
   try {
@@ -608,7 +638,13 @@ app.get('/api/public/:username', async (req, res) => {
     const userId = userResult.rows[0].id;
     
     const profile = await pool.query('SELECT * FROM profiles WHERE user_id = $1', [userId]);
-    const experience = await pool.query('SELECT * FROM experience WHERE user_id = $1 ORDER BY start_date DESC', [userId]);
+    const experienceResult = await pool.query('SELECT * FROM experience WHERE user_id = $1', [userId]);
+    // Sort experience by parsed date (most recent first)
+    const experience = experienceResult.rows.sort((a, b) => {
+      const dateA = parseDate(a.start_date);
+      const dateB = parseDate(b.start_date);
+      return dateB - dateA;
+    });
     const education = await pool.query('SELECT * FROM education WHERE user_id = $1 ORDER BY start_year DESC', [userId]);
     const skills = await pool.query('SELECT * FROM skills WHERE user_id = $1 ORDER BY category', [userId]);
     const projects = await pool.query('SELECT * FROM projects WHERE user_id = $1 ORDER BY featured DESC', [userId]);
@@ -616,7 +652,7 @@ app.get('/api/public/:username', async (req, res) => {
     
     res.json({
       profile: profile.rows[0] || {},
-      experience: experience.rows,
+      experience: experience,
       education: education.rows,
       skills: skills.rows,
       projects: projects.rows,
@@ -624,6 +660,36 @@ app.get('/api/public/:username', async (req, res) => {
     });
   } catch (error) {
     console.error('Public view error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ RESUME DATA ROUTE (for printable/ATS resumes) ============
+
+app.get('/api/resume/data', authenticate, async (req, res) => {
+  try {
+    const profile = await pool.query('SELECT * FROM profiles WHERE user_id = $1', [req.userId]);
+    const experienceResult = await pool.query('SELECT * FROM experience WHERE user_id = $1', [req.userId]);
+    // Sort experience by parsed date (most recent first)
+    const experience = experienceResult.rows.sort((a, b) => {
+      const dateA = parseDate(a.start_date);
+      const dateB = parseDate(b.start_date);
+      return dateB - dateA;
+    });
+    const education = await pool.query('SELECT * FROM education WHERE user_id = $1 ORDER BY start_year DESC', [req.userId]);
+    const skills = await pool.query('SELECT * FROM skills WHERE user_id = $1 ORDER BY category', [req.userId]);
+    const projects = await pool.query('SELECT * FROM projects WHERE user_id = $1 ORDER BY featured DESC', [req.userId]);
+    const achievements = await pool.query('SELECT * FROM achievements WHERE user_id = $1 ORDER BY date DESC', [req.userId]);
+    
+    res.json({
+      profile: profile.rows[0] || {},
+      experience: experience,
+      education: education.rows,
+      skills: skills.rows,
+      projects: projects.rows,
+      achievements: achievements.rows
+    });
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
