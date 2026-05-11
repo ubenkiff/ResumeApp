@@ -172,7 +172,7 @@ function Dashboard({ user, onLogout }) {
               {subscriptionStatus === 'premium' ? (
                 <button
                   onClick={() => { 
-                    navigator.clipboard.writeText(`https://resumeapp.vercel.app/view/${user?.username}`); 
+                    navigator.clipboard.writeText(`${window.location.origin}/view/${user?.username}`); 
                     alert('Link copied to clipboard!'); 
                   }}
                   className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center gap-2 transition shadow-sm"

@@ -198,11 +198,11 @@ function LoginPage({ onLogin }) {
 function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    if (token) {
-      fetchUser();
-    }
+    if (token) fetchUser();
+    else setAuthChecked(true);
   }, [token]);
 
   const fetchUser = async () => {
@@ -211,6 +211,9 @@ function App() {
       setUser(res.data);
     } catch (err) {
       logout();
+      return;
+    } finally {
+      setAuthChecked(true);
     }
   };
 
@@ -220,20 +223,28 @@ function App() {
     setUser(null);
   };
 
-  if (!user) {
-    return <LoginPage onLogin={setUser} />;
-  }
+  const Home = () => {
+    if (!authChecked) return null;
+    if (!user) return <LoginPage onLogin={setUser} />;
+    return <Dashboard user={user} onLogout={logout} />;
+  };
+
+  const ProtectedAIAssistant = () => {
+    if (!authChecked) return null;
+    if (!user) return <Navigate to="/" replace />;
+    return <AIAssistant />;
+  };
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Dashboard user={user} onLogout={logout} />} />
+        <Route path="/" element={<Home />} />
         <Route path="/view/:username" element={<PublicView />} />
         <Route path="/resume/:username" element={<PrintableResume />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/ats-resume/:username" element={<ATSScore />} />
-        <Route path="/ai-assistant" element={<AIAssistant />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="/ai-assistant" element={<ProtectedAIAssistant />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
