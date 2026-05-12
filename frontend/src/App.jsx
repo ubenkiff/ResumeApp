@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import api from './api';
 import Dashboard from './Dashboard';
 import PublicView from './PublicView';
@@ -236,7 +236,7 @@ function App() {
   };
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/view/:username" element={<PublicView />} />
@@ -246,7 +246,7 @@ function App() {
         <Route path="/ai-assistant" element={<ProtectedAIAssistant />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

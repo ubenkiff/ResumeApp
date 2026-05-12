@@ -98,7 +98,7 @@ function PublicView() {
         <button onClick={() => window.print()} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition text-sm">
           <i className="fas fa-print"></i> Printable Resume
         </button>
-        <a href="/" className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition text-sm no-print">
+        <a href="/#/" className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition text-sm no-print">
           <i className="fas fa-home"></i> Home
         </a>
       </div>
@@ -117,7 +117,7 @@ function PublicView() {
             <div className="text-center md:text-left">
               <h1 className="text-3xl md:text-4xl font-bold text-white">{profile.name || 'Your Name'}</h1>
               <p className="text-xl text-blue-400 mt-2">{profile.title || 'Professional Title'}</p>
-              <p className="text-slate-300 mt-4 leading-relaxed">{profile.bio}</p>
+              <p className="text-slate-300 mt-4 leading-relaxed whitespace-pre-line">{profile.bio}</p>
               <div className="flex flex-wrap gap-4 mt-4 justify-center md:justify-start text-slate-400">
                 {profile.email && <span><i className="fas fa-envelope text-blue-400 mr-1"></i> {profile.email}</span>}
                 {profile.phone && <span><i className="fas fa-phone text-green-400 mr-1"></i> {profile.phone}</span>}
@@ -140,7 +140,7 @@ function PublicView() {
                 </div>
                 <span className="text-slate-400 text-sm">{exp.start_date} — {exp.current ? 'Present' : exp.end_date}</span>
               </div>
-              <p className="text-slate-300 mt-2">{exp.description}</p>
+              <p className="text-slate-300 mt-2 whitespace-pre-line">{exp.description}</p>
               {exp.highlights && exp.highlights.length > 0 && (
                 <ul className="mt-2 space-y-1">
                   {exp.highlights.map((h, i) => (
@@ -207,7 +207,7 @@ function PublicView() {
                   )}
                   <div className="p-5">
                     <h3 className="text-lg font-semibold text-white mb-2">{project.title}</h3>
-                    <p className="text-slate-300 text-sm leading-relaxed">{project.description}</p>
+                    <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">{project.description}</p>
                     {project.tech_stack && project.tech_stack.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-3">
                         {project.tech_stack.map((tech, i) => (

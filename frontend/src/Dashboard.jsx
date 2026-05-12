@@ -9,6 +9,8 @@ import AchievementsManager from './AchievementsManager';
 import WhatsAppButton from './components/WhatsAppButton';
 import AIAssistant from './pages/AIAssistant';
 import ReferencesManager from './components/ReferencesManager';
+import BlurSnipTool from './components/BlurSnipTool';
+import { Shield } from 'lucide-react';
 
 function Dashboard({ user, onLogout }) {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -20,6 +22,8 @@ function Dashboard({ user, onLogout }) {
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [subscriptionStatus, setSubscriptionStatus] = useState('free');
+  const [showBlurSnip, setShowBlurSnip] = useState(false);
+  const [resumeDataForBlur, setResumeDataForBlur] = useState(null);
 
   useEffect(() => {
     fetchAllData();
@@ -60,6 +64,18 @@ function Dashboard({ user, onLogout }) {
 
   const refreshData = () => {
     fetchAllData();
+  };
+
+  const openBlurSnipTool = () => {
+    setResumeDataForBlur({
+      name: profile?.fullName || profile?.username || 'Your Name',
+      email: profile?.email || user?.email || 'your@email.com',
+      phone: profile?.phone || '(555) 123-4567',
+      company: experience?.[0]?.company || 'Current Company',
+      dates: experience?.[0]?.startDate ? `${experience[0].startDate} - ${experience[0].endDate || 'Present'}` : '2020 - Present',
+      location: profile?.location || 'City, State'
+    });
+    setShowBlurSnip(true);
   };
 
   const menuItems = [
@@ -150,29 +166,38 @@ function Dashboard({ user, onLogout }) {
               </div>
             </div>
 
-            {/* Action Buttons with Paywall */}
+            {/* Action Buttons */}
             <div className="flex flex-wrap gap-4 mb-8">
               {/* View Portfolio - Always free */}
               <button
-                onClick={() => window.open(`/view/${user?.username}`, '_blank')}
+                onClick={() => window.open(`/#/view/${user?.username}`, '_blank')}
                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition shadow-sm"
               >
                 <i className="fas fa-eye"></i> View Public Portfolio
               </button>
               
-              {/* ATS Resume - Always free (NEW) */}
+              {/* ATS Resume - Always free */}
               <button
-                onClick={() => window.open(`/ats-resume/${user?.username}`, '_blank')}
+                onClick={() => window.open(`/#/ats-resume/${user?.username}`, '_blank')}
                 className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center gap-2 transition shadow-sm"
               >
                 <i className="fas fa-chart-line"></i> View ATS Resume
+              </button>
+              
+              {/* Blur & Snip Tool - Free for all users */}
+              <button
+                onClick={openBlurSnipTool}
+                className="px-6 py-3 bg-pink-600 hover:bg-pink-700 text-white rounded-lg flex items-center gap-2 transition shadow-sm"
+              >
+                <Shield size={18} />
+                Blur & Snip
               </button>
               
               {/* Share Link - Premium only */}
               {subscriptionStatus === 'premium' ? (
                 <button
                   onClick={() => { 
-                    navigator.clipboard.writeText(`${window.location.origin}/view/${user?.username}`); 
+                    navigator.clipboard.writeText(`${window.location.origin}/#/view/${user?.username}`); 
                     alert('Link copied to clipboard!'); 
                   }}
                   className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center gap-2 transition shadow-sm"
@@ -191,7 +216,7 @@ function Dashboard({ user, onLogout }) {
               {/* Print/Download - Premium only */}
               {subscriptionStatus === 'premium' ? (
                 <button
-                  onClick={() => window.open(`/resume/${user?.username}`, '_blank')}
+                  onClick={() => window.open(`/#/resume/${user?.username}`, '_blank')}
                   className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2 transition shadow-sm"
                 >
                   <i className="fas fa-print"></i> Print / Download PDF
@@ -217,6 +242,7 @@ function Dashboard({ user, onLogout }) {
                 <li>• Add your work experience with key highlights</li>
                 <li>• List your skills and projects to showcase your expertise</li>
                 <li>• Use the ATS Resume to check how recruiters see your resume</li>
+                <li>• Use <span className="text-pink-600 font-semibold">Blur & Snip</span> to create shareable snippets with hidden sensitive info</li>
                 {subscriptionStatus !== 'premium' && <li>• <span className="text-orange-600 font-semibold">Upgrade to Premium</span> to share your resume and print PDF</li>}
               </ul>
             </div>
@@ -283,6 +309,15 @@ function Dashboard({ user, onLogout }) {
 
       {/* WhatsApp Floating Button */}
       <WhatsAppButton />
+
+      {/* Blur & Snip Modal */}
+      {showBlurSnip && (
+        <BlurSnipTool
+          isOpen={showBlurSnip}
+          onClose={() => setShowBlurSnip(false)}
+          resumeData={resumeDataForBlur}
+        />
+      )}
     </div>
   );
 }

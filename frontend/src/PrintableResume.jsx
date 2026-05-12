@@ -124,7 +124,7 @@ function PrintableResume() {
                 {profile.bio && (
                   <div>
                     <h2 className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-2 border-b border-gray-200 pb-1">Personal Statement</h2>
-                    <p className="text-xs leading-relaxed text-gray-700">{profile.bio}</p>
+                    <p className="text-xs leading-relaxed text-gray-700 whitespace-pre-line">{profile.bio}</p>
                   </div>
                 )}
 
@@ -141,7 +141,7 @@ function PrintableResume() {
                             </div>
                             <p className="text-xs text-gray-500 whitespace-nowrap ml-4">{exp.start_date} — {exp.current ? 'Present' : exp.end_date}</p>
                           </div>
-                          {exp.description && <p className="text-xs text-gray-600 mt-1 leading-relaxed">{exp.description}</p>}
+                          {exp.description && <p className="text-xs text-gray-600 mt-1 leading-relaxed whitespace-pre-line">{exp.description}</p>}
                           {exp.highlights && exp.highlights.length > 0 && (
                             <ul className="mt-2 space-y-1">
                               {exp.highlights.map((h, i) => (
@@ -168,7 +168,7 @@ function PrintableResume() {
                             )}
                             <div className="flex-1">
                               <p className="text-xs font-bold text-gray-800">{project.title}</p>
-                              <p className="text-xs text-gray-600">{project.description}</p>
+                              <p className="text-xs text-gray-600 whitespace-pre-line">{project.description}</p>
                               {project.tech_stack && project.tech_stack.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-1">
                                   {project.tech_stack.slice(0, 3).map((tech, i) => (
